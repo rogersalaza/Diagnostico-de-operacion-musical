@@ -1,0 +1,278 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Diagnóstico de Operación Musical</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700&family=Work+Sans:wght@400;500;600&display=swap">
+<style>
+html{color-scheme:light}body{margin:0}[hidden]{display:none!important}
+/* Layout: formulario por pasos en una columna de lectura, barra de progreso tipo línea de tiempo de una sesión */
+:root{
+  --bg:#f3f2f5; --panel:#ffffff; --ink:#1d1b2e; --muted:#5f5b74; --line:#dcd9e4;
+  --accent:#b8332b; --accent-soft:#f5e1df; --accent-ink:#ffffff; --ok:#2a7d55;
+  --display:"Unbounded","Arial Black",Arial,sans-serif;
+  --body:"Work Sans",system-ui,-apple-system,Segoe UI,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#15141f; --panel:#1e1c2b; --ink:#ecebf3; --muted:#a29fb6; --line:#332f45;
+  --accent:#e2574c; --accent-soft:#3a2026; --accent-ink:#15141f; --ok:#5cc792; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#15141f; --panel:#1e1c2b; --ink:#ecebf3; --muted:#a29fb6; --line:#332f45;
+  --accent:#e2574c; --accent-soft:#3a2026; --accent-ink:#15141f; --ok:#5cc792; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:24px 48px}
+.wrap{max-width:680px;margin:0 auto;display:grid;gap:20px}
+.eyebrow{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);font-weight:600}
+h1{font-family:var(--display);font-weight:700;font-size:clamp(24px,5.5vw,34px);line-height:1.15;margin:4px 0 8px;text-wrap:balance}
+.lead{color:var(--muted);margin:0;max-width:60ch}
+.steps{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.steps span{height:6px;border-radius:3px;background:var(--line)}
+.steps span.on{background:var(--accent)}
+.steplbl{font-size:13px;color:var(--muted);margin-top:6px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:20px;display:grid;gap:22px}
+h2{font-family:var(--display);font-weight:500;font-size:19px;margin:0;line-height:1.3}
+h3{font-size:14px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:8px 0 0;font-weight:600}
+.q{display:grid;gap:8px;border:0;margin:0;padding:0;min-width:0}
+.q legend,.q>label.t{font-weight:600;padding:0;margin-bottom:4px}
+.opts{display:flex;flex-wrap:wrap;gap:8px}
+.opts label{display:flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:999px;padding:8px 14px;cursor:pointer;font-size:15px;background:var(--bg)}
+.opts input{accent-color:var(--accent);margin:0}
+.opts label:has(input:checked){border-color:var(--accent);background:var(--accent-soft)}
+input[type=text],input[type=tel],input[type=email],textarea{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px 12px;width:100%;min-width:0}
+textarea{min-height:76px;resize:vertical}
+.rate{display:grid;grid-template-columns:1fr auto;gap:8px 12px;align-items:center}
+.rate .scale{display:flex;gap:4px}
+.rate .scale label{width:36px;height:36px;display:grid;place-items:center;border:1px solid var(--line);border-radius:8px;cursor:pointer;background:var(--bg);font-variant-numeric:tabular-nums}
+.rate .scale input{position:absolute;opacity:0;pointer-events:none}
+.rate .scale label:has(input:checked){background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.rate .scale label:has(input:focus-visible){outline:2px solid var(--accent);outline-offset:2px}
+.hint{font-size:13px;color:var(--muted);margin:0}
+.nav{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+button{font:inherit;font-weight:600;border:0;border-radius:8px;padding:12px 20px;cursor:pointer;background:var(--accent);color:var(--accent-ink)}
+button.sec{background:transparent;color:var(--ink);border:1px solid var(--line)}
+button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.err{color:var(--accent);font-size:14px;min-height:1.2em;margin:0}
+.result{display:grid;gap:16px}
+.pkg{display:grid;grid-template-columns:auto 1fr;gap:16px;align-items:center;padding:16px;border-radius:10px;background:var(--accent-soft)}
+.score{font-family:var(--display);font-weight:700;font-size:44px;line-height:1;font-variant-numeric:tabular-nums}
+.score small{display:block;font-family:var(--body);font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-top:6px}
+.pkg b{font-family:var(--display);font-size:20px;font-weight:500;display:block}
+ol.top{margin:0;padding-left:20px;display:grid;gap:4px}
+pre.sum{white-space:pre-wrap;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:12px;font-size:13px;margin:0;max-height:260px;overflow:auto}
+.foot{font-size:13px;color:var(--muted);text-align:center}
+@media (max-width:480px){.rate{grid-template-columns:1fr}.pkg{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow"><span id="marca"></span> · Diagnóstico gratuito · 10 minutos</div>
+    <h1>¿Cuánto tiempo y dinero se te va en la operación?</h1>
+    <p class="lead">Para disqueras, editoras, grupos, artistas, compositores, estudios y rentadoras de equipo. Contesta lo que aplique y al final verás qué se puede automatizar primero.</p>
+  </header>
+
+  <div>
+    <div class="steps" id="steps"><span></span><span></span><span></span><span></span><span></span></div>
+    <div class="steplbl" id="steplbl"></div>
+  </div>
+
+  <form id="f" class="card" novalidate>
+    <!-- Paso 1 -->
+    <section data-step="1" class="card" style="border:0;padding:0">
+      <h2>Tus datos</h2>
+      <label class="q"><span class="t" style="font-weight:600">Nombre del proyecto o empresa</span><input type="text" id="empresa" name="empresa" required></label>
+      <label class="q"><span style="font-weight:600">Tu nombre</span><input type="text" id="contacto" name="contacto" required></label>
+      <label class="q"><span style="font-weight:600">WhatsApp</span><input type="tel" id="tel" name="tel" inputmode="tel" required></label>
+      <fieldset class="q"><legend>¿Qué eres? Marca todo lo que aplique</legend>
+        <div class="opts" id="tipos"></div></fieldset>
+      <div id="p1"></div>
+    </section>
+    <!-- Paso 2 -->
+    <section data-step="2" hidden class="card" style="border:0;padding:0">
+      <h2>¿Dónde te duele?</h2>
+      <p class="hint">Del 1 (no me cuesta) al 5 (me quita mucho tiempo o dinero). Marca N/A si no aplica a tu proyecto.</p>
+      <div class="rate" id="rate"></div>
+      <div id="p2"></div>
+    </section>
+    <!-- Paso 3 -->
+    <section data-step="3" hidden class="card" style="border:0;padding:0">
+      <h2>Tu operación</h2>
+      <p class="hint">Solo ves las preguntas de lo que marcaste en el primer paso.</p>
+      <div id="p3" style="display:grid;gap:22px"></div>
+    </section>
+    <!-- Paso 4 -->
+    <section data-step="4" hidden class="card" style="border:0;padding:0">
+      <h2>Datos, inversión y tiempos</h2>
+      <div id="p4" style="display:grid;gap:22px"></div>
+    </section>
+    <!-- Paso 5 -->
+    <section data-step="5" hidden class="result">
+      <h2>Tu diagnóstico</h2>
+      <div class="pkg"><div class="score"><span id="pts">0</span><small>puntos</small></div>
+        <div><b id="pkgname"></b><span id="pkgdesc"></span></div></div>
+      <div><h3>Lo que más te cuesta</h3><ol class="top" id="top"></ol></div>
+      <div><h3>Resumen para enviar</h3><pre class="sum" id="sum"></pre></div>
+      <div class="nav">
+        <button type="button" class="sec" id="copy">Copiar resumen</button>
+        <a id="wa" href="#" target="_blank" rel="noopener"><button type="button" tabindex="-1">Enviar por WhatsApp</button></a>
+      </div>
+      <p class="hint" id="copied" role="status"></p>
+    </section>
+
+    <p class="err" id="err" role="alert"></p>
+    <div class="nav" id="nav">
+      <button type="button" class="sec" id="back">Atrás</button>
+      <button type="submit" id="next">Siguiente</button>
+    </div>
+  </form>
+  <p class="foot">Tus respuestas no se guardan en esta página: solo se envían si tú das clic en “Enviar por WhatsApp”.</p>
+</div>
+
+<script>
+/* ===== CONFIGURACIÓN: cambia aquí tu número (con lada, sin + ni espacios) ===== */
+const WHATSAPP = "528186830402";
+const AGENCIA = "Rogelio Salazar A.I. Solutions";
+/* ============================================================================ */
+
+const TIPOS=[["grupo","Grupo / banda / artista"],["mgmt","Management / booking"],["editora","Editora"],["compositor","Compositor"],["disquera","Disquera"],["estudio","Estudio de grabación"],["renta","Renta de equipo / backline"]];
+const DOLORES=["Agenda de fechas o sesiones","Cotizaciones y ventas","Cobros y pagos","Registros y derechos","Inventario / rentas","Atención a clientes o fans","Reportes y regalías"];
+// Pregunta: [id, texto, opciones[[etiqueta,puntos]], multi?]
+const SI=[["Sí",1],["No",0]];
+const COMUN1=[
+ ["gente","¿Cuántas personas participan en la operación?",[["1–2",0],["3–10",1],["Más de 10",2]]],
+ ["unidades","¿Cuántos grupos, artistas o sedes manejas?",[["1",0],["2–5",1],["Más de 5",2]]],
+ ["herr","¿Con qué llevas hoy tu operación?",[["Libreta",0],["WhatsApp",0],["Excel / Sheets",0],["Google Calendar",0],["Software contable",0],["CRM",0],["Nada formal",0]],true],
+];
+const COMUN2=[
+ ["perdida","En el último año, ¿perdiste dinero o una oportunidad por desorden? (fecha cruzada, cobro olvidado, equipo no devuelto, regalía no cobrada)",[["No",0],["Una vez",1],["Varias veces",2]]],
+ ["horas","¿Cuántas horas a la semana se te van en lo administrativo?",[["Menos de 5",0],["5–15",0],["Más de 15",0]]],
+];
+const MOD={
+ grupo:["Grupos, artistas y management",[
+  ["c1a","¿Llevas la agenda en más de un lugar (WhatsApp, libreta, calendario)?",SI],
+  ["c1b","¿Cuántas cotizaciones de shows haces al mes, a mano?",[["Menos de 5",0],["5–10",1],["Más de 10",2]]],
+  ["c1c","¿Te cuesta dar seguimiento a anticipos y liquidaciones?",SI],
+  ["c1d","¿Repartes pagos entre integrantes, músicos o staff después de cada fecha?",SI]]],
+ editora:["Editoras y compositores",[
+  ["c2a","¿Cuántas obras hay en el catálogo?",[["Menos de 50",0],["50–500",1],["Más de 500",2]]],
+  ["c2b","¿Te falta un registro central de autores, splits y contratos por obra?",SI],
+  ["c2c","¿Te falta control de qué obras están registradas ante SACM, INDAUTOR u otras sociedades?",SI],
+  ["c2d","¿Concilias a mano reportes de regalías de varias fuentes?",SI]]],
+ disquera:["Disqueras",[
+  ["c3a","¿Cuántos lanzamientos al año?",[["Menos de 10",0],["10–50",1],["Más de 50",2]]],
+  ["c3b","¿Te falta un calendario de lanzamiento con tareas por canción (masters, arte, metadata, ISRC, distribución)?",SI],
+  ["c3c","¿Vigilas a mano vencimientos y opciones de contratos de artistas?",SI],
+  ["c3d","¿Haces a mano estados de cuenta o reportes de regalías para tus artistas?",SI]]],
+ renta:["Renta de equipo y backline",[
+  ["c4a","¿Cuántos equipos tienes en inventario?",[["Menos de 50",0],["50–300",1],["Más de 300",2]]],
+  ["c4b","¿Cotizas, apartas y confirmas disponibilidad a mano?",SI],
+  ["c4c","¿Te falta contrato de renta y depósito en garantía en cada servicio?",SI],
+  ["c4d","¿Has tenido equipo no devuelto, dañado o rentado dos veces la misma fecha?",SI]]],
+ estudio:["Estudios de grabación",[
+  ["c5a","¿Agendas sesiones por WhatsApp o teléfono sin calendario compartido?",SI],
+  ["c5b","¿Te cuesta cobrar el anticipo para apartar la sesión?",SI]]],
+};
+MOD.mgmt=MOD.grupo; MOD.compositor=MOD.editora;
+const COMUN4=[
+ ["sens","¿Qué información sensible manejas?",[["Contratos",1],["Datos bancarios de integrantes o autores",1],["Regalías",1],["Catálogo inédito",1],["Datos de fans",1]],true,2],
+ ["integ","¿Con cuántos sistemas habría que conectarse? (facturación, banco, distribuidora, tienda en línea)",[["Ninguno",0],["1–2",1],["3 o más",2]]],
+ ["opera","¿Prefieres que nosotros operemos el sistema o capacitar a tu gente?",[["Que lo operen ustedes",0],["Capacitar a mi equipo",0],["No sé",0]]],
+ ["inv","Inversión inicial que contemplas",[["Menos de $10,000 MXN",0],["$10,000–30,000",0],["$30,000–80,000",0],["Más de $80,000",0]]],
+ ["cuando","¿Para cuándo lo necesitas funcionando?",[["Este mes",0],["1–3 meses",0],["Sin prisa",0]]],
+];
+const EFECTIVO=[
+ ["efe","¿Cuánto de lo que cobran es en efectivo?",[["Nada",0],["Una parte",1],["Casi todo",2]]],
+ ["efereg","¿Cómo registran el efectivo y su reparto?",[["Nadie lo registra",1],["Libreta o WhatsApp",1],["Excel",0],["Un sistema",0]]],
+];
+const PKG=[[0,"Básico","Un proceso automatizado (por ejemplo agenda con recordatorios, o cotización automática) y capacitación."],
+ [9,"Operativo","Dos o tres procesos conectados (por ejemplo agenda, cotización y cobro) y un asistente de WhatsApp."],
+ [17,"Integral","Un sistema completo para tu operación: clientes, cobros, registros o regalías, reportes y agentes de IA."]];
+
+// "No aplica" en todas las preguntas de una sola opción
+[COMUN1,COMUN2,COMUN4,EFECTIVO,...Object.values(MOD).map(m=>m[1])].forEach(l=>l.forEach(x=>{if(!x[3]&&!x[2].some(o=>o[0]==="No aplica")) x[2]=[...x[2],["No aplica",0]]}));
+const $=id=>document.getElementById(id);
+let step=1;
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+function q([id,txt,opts,multi]){return `<fieldset class="q" data-q="${id}"><legend>${esc(txt)}</legend><div class="opts">${opts.map((o,i)=>`<label><input type="${multi?"checkbox":"radio"}" name="${id}" value="${i}">${esc(o[0])}</label>`).join("")}</div></fieldset>`}
+
+$("tipos").innerHTML=TIPOS.map(([v,l])=>`<label><input type="checkbox" name="tipo" value="${v}">${l}</label>`).join("");
+$("p1").innerHTML=COMUN1.map(q).join("");
+$("rate").innerHTML=DOLORES.map((d,i)=>`<span>${d}</span><div class="scale" role="radiogroup" aria-label="${d}">${[1,2,3,4,5].map(n=>`<label><input type="radio" name="d${i}" value="${n}">${n}</label>`).join("")}<label style="width:auto;padding:0 10px"><input type="radio" name="d${i}" value="0">N/A</label></div>`).join("");
+$("p2").innerHTML=COMUN2.map(q).join("")+`<label class="q"><span style="font-weight:600">Si solo pudiéramos resolver una cosa en 30 días, ¿cuál sería?</span><textarea id="una" name="una"></textarea></label>`;
+$("p4").innerHTML=COMUN4.map(q).join("")+`<div id="pefe" style="display:grid;gap:22px"><h3>Manejo de efectivo (opcional)</h3><p class="hint">Muchos grupos cobran una parte en efectivo y es lo más difícil de controlar. Contesta solo si aplica.</p>${EFECTIVO.map(q).join("")}</div>`;
+$("marca").textContent=AGENCIA;
+
+const tipos=()=>[...document.querySelectorAll('input[name=tipo]:checked')].map(i=>i.value);
+function modulos(){const seen=new Set();return tipos().map(t=>MOD[t]).filter(m=>m&&!seen.has(m)&&seen.add(m))}
+function buildP3(){const prev=Object.fromEntries([...$("p3").querySelectorAll("input:checked")].map(i=>[i.name,i.value]));
+  $("p3").innerHTML=modulos().map(([t,qs])=>`<h3>${t}</h3>`+qs.map(q).join("")).join("")||`<p class="hint">Marca al menos un tipo en el primer paso.</p>`;
+  for(const [n,v] of Object.entries(prev)){const el=$("p3").querySelector(`input[name="${n}"][value="${v}"]`); if(el) el.checked=true;}}
+
+const esGrupo=()=>tipos().some(t=>t==="grupo"||t==="mgmt");
+function allQs(){return [...COMUN1,...COMUN2,...modulos().flatMap(m=>m[1]),...COMUN4,...(esGrupo()?EFECTIVO:[])]}
+function val(name){return [...document.querySelectorAll(`input[name="${name}"]:checked`)].map(i=>+i.value)}
+function puntos(){let p=0;
+  for(const [id,,opts,multi,cap] of allQs()){const v=val(id); if(!v.length) continue;
+    if(multi){ if(cap){const n=v.length; p+=n>=3?2:n>=1?1:0;} }
+    else p+=opts[v[0]][1];}
+  if(val("herr").length>=4) p+=2; else if(val("herr").length>=2) p+=1;
+  return p;}
+function texto(id){const qd=allQs().find(x=>x[0]===id); const v=val(id); return v.map(i=>qd[2][i][0]).join(", ")||"—"}
+
+function validar(){
+  if(step===1){ if(!$("empresa").value.trim()||!$("contacto").value.trim()||!$("tel").value.trim()) return "Llena tu nombre, el del proyecto y tu WhatsApp.";
+    if(!tipos().length) return "Marca al menos qué tipo de proyecto eres.";}
+  if(step===2){ if(DOLORES.every((_,i)=>!(val("d"+i)[0]>0))) return "Califica al menos un área del 1 al 5.";}
+  return "";}
+
+function resultado(){
+  const p=puntos(); const pk=[...PKG].reverse().find(x=>p>=x[0]);
+  $("pts").textContent=p; $("pkgname").textContent="Paquete "+pk[1]; $("pkgdesc").textContent=pk[2];
+  const ranked=DOLORES.map((d,i)=>[d,val("d"+i)[0]||0]).filter(r=>r[1]>0).sort((a,b)=>b[1]-a[1]).slice(0,3);
+  $("top").innerHTML=ranked.map(([d,n])=>`<li>${esc(d)} <span class="hint" style="display:inline">(${n}/5)</span></li>`).join("");
+  const lines=[`*${AGENCIA}* · Diagnóstico`,`Proyecto: ${$("empresa").value.trim()}`,`Contacto: ${$("contacto").value.trim()} · ${$("tel").value.trim()}`,
+   `Tipo: ${tipos().map(t=>TIPOS.find(x=>x[0]===t)[1]).join(", ")}`,``,
+   `Puntaje: ${p} → Paquete ${pk[1]}`,`Principales dolores: ${ranked.map(r=>r[0]+" ("+r[1]+"/5)").join("; ")}`,
+   `Prioridad a 30 días: ${$("una").value.trim()||"—"}`,``,
+   `Personas: ${texto("gente")} · Unidades: ${texto("unidades")}`,`Herramientas: ${texto("herr")}`,
+   `Pérdidas por desorden: ${texto("perdida")} · Horas admin/semana: ${texto("horas")}`,
+   ...modulos().flatMap(([t,qs])=>[``,`_${t}_`,...qs.map(x=>`• ${x[1]} ${texto(x[0])}`)]),``,
+   `Info sensible: ${texto("sens")}`,`Integraciones: ${texto("integ")} · Operación: ${texto("opera")}`,
+   `Inversión: ${texto("inv")} · Para cuándo: ${texto("cuando")}`,
+   ...(esGrupo()?[``,`_Efectivo_`,`• En efectivo: ${texto("efe")} · Registro: ${texto("efereg")}`]:[])];
+  const s=lines.join("\n"); $("sum").textContent=s;
+  $("wa").href="https://wa.me/"+(WHATSAPP||"")+"?text="+encodeURIComponent(s);
+}
+
+function show(){
+  document.querySelectorAll("[data-step]").forEach(s=>s.hidden=+s.dataset.step!==step);
+  [...$("steps").children].forEach((s,i)=>s.classList.toggle("on",i<step));
+  $("steplbl").textContent=["Paso 1 de 5 · Tus datos","Paso 2 de 5 · Dolores","Paso 3 de 5 · Tu operación","Paso 4 de 5 · Inversión","Listo · Tu diagnóstico"][step-1];
+  $("back").style.visibility=step>1&&step<5?"visible":"hidden";
+  $("nav").hidden=step===5; $("err").textContent="";
+  $("next").textContent=step===4?"Ver mi diagnóstico":"Siguiente";
+  window.scrollTo({top:0,behavior:matchMedia("(prefers-reduced-motion:reduce)").matches?"auto":"smooth"});
+}
+$("f").addEventListener("submit",e=>{e.preventDefault(); const m=validar(); if(m){$("err").textContent=m;return;}
+  if(step===2) buildP3(); if(step===3) $("pefe").hidden=!esGrupo(); if(step===4) resultado(); step=Math.min(5,step+1); show();});
+$("back").onclick=()=>{step=Math.max(1,step-1); show();};
+$("copy").onclick=()=>{const t=$("sum").textContent;
+  navigator.clipboard.writeText(t).then(()=>$("copied").textContent="Resumen copiado.").catch(()=>{
+    const r=document.createRange(); r.selectNodeContents($("sum")); const s=getSelection(); s.removeAllRanges(); s.addRange(r);
+    $("copied").textContent="Selecciona y copia el texto del resumen.";});};
+
+// Ejemplo para la vista previa: ?ejemplo
+if(location.search.includes("ejemplo")){
+  $("empresa").value="Grupo Ejemplo"; $("contacto").value="Juan Pérez"; $("tel").value="81 0000 0000";
+  ["grupo","renta"].forEach(v=>document.querySelector(`input[name=tipo][value=${v}]`).checked=true);
+}
+show();
+</script>
+
+</body>
+</html>
